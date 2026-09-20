@@ -8,6 +8,25 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: reviews
+          POSTGRES_PASSWORD: reviews
+          POSTGRES_DB: reviews
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reviews -d reviews"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://reviews:reviews@localhost:5432/reviews
+
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -18,4 +37,6 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: ruff format --check .
-      - run: pytest -m "not integration"
+      - run: psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS vector;"
+      - run: python scripts/init_schema.py
+      - run: pytest
