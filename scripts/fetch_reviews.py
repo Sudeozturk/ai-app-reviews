@@ -13,9 +13,7 @@ def main() -> None:
     args = parser.parse_args()
 
     before = count_reviews(args.app_id)
-    items = fetch_reviews(
-        args.app_id, lang=args.lang, country=args.country, count=args.count
-    )
+    items = fetch_reviews(args.app_id, lang=args.lang, country=args.country, count=args.count)
     saved = save_reviews(items)
     after = count_reviews(args.app_id)
 
