@@ -10,6 +10,7 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "python-dotenv>=1.0",
     "google-play-scraper>=1.2",
+    "google-genai>=1.0",
 ]
 
 [project.optional-dependencies]
