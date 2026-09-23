@@ -66,3 +66,25 @@ def save_label(
         conn.execute(DELETE_CATEGORIES_SQL, key)
         for c in categories:
             conn.execute(INSERT_CATEGORY_SQL, (*key, c.name, c.sentiment))
+
+
+EVAL_PENDING_SQL = """
+SELECT r.review_id, r.content
+FROM reviews r
+WHERE r.review_id = ANY(%s::text[])
+  AND NOT EXISTS (
+      SELECT 1 FROM review_labels l
+      WHERE l.review_id = r.review_id
+        AND l.prompt_version = %s
+        AND l.model = %s
+  )
+LIMIT %s
+"""
+
+
+def pending_eval_reviews(
+    review_ids: list[str], prompt_version: str, model: str, limit: int
+) -> list[tuple[str, str]]:
+    with get_connection() as conn:
+        rows = conn.execute(EVAL_PENDING_SQL, (review_ids, prompt_version, model, limit)).fetchall()
+    return [(row[0], row[1]) for row in rows]

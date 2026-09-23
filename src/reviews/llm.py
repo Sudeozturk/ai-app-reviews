@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 import time
 from dataclasses import dataclass
 
@@ -121,10 +122,13 @@ def complete(prompt: str, model: str | None = None, max_attempts: int = 4) -> LL
             return _complete_once(prompt, model)
         except genai_errors.APIError as exc:
             code = getattr(exc, "code", None)
-            if code == 429 and "PerDay" in str(exc):
-                raise DailyQuotaExceeded(str(exc)[:200]) from exc
+            message = str(exc)
+            if code == 429 and "PerDay" in message:
+                raise DailyQuotaExceeded(message[:200]) from exc
             if code not in RETRYABLE_CODES or attempt == max_attempts:
                 raise
-            time.sleep(delay)
+            match = re.search(r"'retryDelay': '(\d+)s'", message)
+            wait = float(match.group(1)) + 1 if match else delay
+            time.sleep(wait)
             delay *= 2
     raise RuntimeError("buraya ulaşılmamalı")
